@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MaqControl V1</title>
+<style>
+body{margin:0;font-family:Arial;background:#f4f6f8;color:#17202a}header{background:#17202a;color:#fff;padding:18px;font-size:22px;font-weight:bold}
+nav{background:white;padding:12px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid #ddd}button{padding:10px 14px;border:0;border-radius:8px;background:#17202a;color:#fff}button.alt{background:#e8edf1;color:#17202a}
+main{max-width:1100px;margin:20px auto;padding:0 15px}.page{display:none}.page.active{display:block}.card{background:white;border:1px solid #ddd;border-radius:12px;padding:18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}input,select,textarea{width:100%;padding:10px;border:1px solid #ccd3da;border-radius:7px;margin:6px 0 12px;box-sizing:border-box}
+label{font-weight:bold;font-size:13px}.item{padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0}.ok{background:#e9f7ec}.warn{background:#fff5d6}.bad{background:#fde5e5}
+#login{max-width:400px;margin:80px auto}.hidden{display:none}.report{line-height:1.6}
+@media print{header,nav,.no-print{display:none!important}.page{display:none}.print-page{display:block!important}}
+</style>
+</head>
+<body>
+<header>🚜 MaqControl <small>V1 — Gestão de manutenção</small></header>
+
+<div id="login" class="card">
+<h2>Acessar MaqControl</h2>
+<label>Empresa</label><input id="company" placeholder="Nome da empresa">
+<label>E-mail</label><input id="email" type="email" placeholder="seu@email.com">
+<button onclick="login()">Entrar</button>
+<p style="font-size:12px;color:#667">V1: login demonstrativo local.</p>
+</div>
+
+<div id="app" class="hidden">
+<nav>
+<button onclick="page('home')">Dashboard</button>
+<button onclick="page('machines')">Máquinas</button>
+<button onclick="page('check')">Checklist</button>
+<button onclick="page('reports')">Relatórios</button>
+<button class="alt" onclick="logout()">Sair</button>
+</nav>
+<main>
+
+<section id="home" class="page active">
+<h1>Dashboard</h1><p id="welcome"></p>
+<div class="grid">
+<div class="card"><b>Máquinas</b><h2 id="countMachines">0</h2></div>
+<div class="card"><b>Checklists</b><h2 id="countChecks">0</h2></div>
+<div class="card"><b>Relatórios</b><h2 id="countReports">0</h2></div>
+</div>
+<div class="card"><h3>Próximo passo</h3><p>Cadastre uma máquina e faça o primeiro checklist.</p></div>
+</section>
+
+<section id="machines" class="page">
+<h1>Máquinas</h1>
+<div class="card">
+<label>Marca / modelo</label><input id="brandModel" placeholder="Ex.: Wirtgen W100">
+<label>Patrimônio</label><input id="patrimony" placeholder="Ex.: PAT-001">
+<label>Horímetro</label><input id="hourmeter" type="number" placeholder="8245">
+<label>Próxima revisão (horímetro)</label><input id="nextService" type="number" placeholder="9000">
+<button onclick="addMachine()">Cadastrar</button>
+</div>
+<div id="machineList"></div>
+</section>
+
+<section id="check" class="page">
+<h1>Novo checklist</h1>
+<div class="card">
+<label>Máquina</label><select id="machineSelect"></select>
+<label>Horímetro atual</label><input id="checkHour" type="number">
+<div class="grid">
+<div><label>Motor</label><select class="check"><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Hidráulico</label><select class="check"><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Elétrica</label><select class="check"><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Estrutura</label><select class="check"><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Correias/correntes</label><select class="check"><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Segurança</label><select class="check"><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+</div>
+<label>Observações</label><textarea id="obs" rows="5" placeholder="Desgastes, vazamentos, peças quebradas..."></textarea>
+<label>Foto (opcional)</label><input id="photo" type="file" accept="image/*">
+<button onclick="saveChecklist()">Salvar checklist e gerar relatório</button>
+</div>
+</section>
+
+<section id="reports" class="page">
+<h1>Relatórios</h1><div id="reportList"></div>
+</section>
+
+<section id="reportView" class="page print-page">
+<div id="reportContent" class="card report"></div>
+<button class="no-print" onclick="window.print()">🖨️ Salvar / imprimir PDF</button>
+</section>
+
+</main></div>
+
+<script>
+let machines=JSON.parse(localStorage.getItem('machines')||'[]');
+let checks=JSON.parse(localStorage.getItem('checks')||'[]');
+
+function login(){
+ let c=document.getElementById('company').value.trim(), e=document.getElementById('email').value.trim();
+ if(!c||!e)return alert('Preencha empresa e e-mail.');
+ localStorage.setItem('user',JSON.stringify({c,e}));
+ document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');
+ document.getElementById('welcome').textContent='Empresa: '+c;refresh();
+}
+function logout(){localStorage.removeItem('user');location.reload()}
+function page(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');refresh()}
+function addMachine(){
+ let m={id:Date.now(),name:brandModel.value.trim(),pat:patrimony.value.trim(),hour:+hourmeter.value||0,next:+nextService.value||0};
+ if(!m.name)return alert('Informe a máquina.');
+ machines.push(m);localStorage.setItem('machines',JSON.stringify(machines));
+ brandModel.value=patrimony.value=hourmeter.value=nextService.value='';refresh();page('machines');
+}
+function saveChecklist(){
+ let sel=document.getElementById('machineSelect'), m=machines.find(x=>x.id==sel.value);
+ if(!m)return alert('Cadastre uma máquina primeiro.');
+ let vals=[...document.querySelectorAll('.check')].map(x=>x.value);
+ let r={id:Date.now(),machine:m.name,hour:+checkHour.value||m.hour,date:new Date().toLocaleDateString('pt-BR'),items:vals,obs:document.getElementById('obs').value};
+ checks.push(r);localStorage.setItem('checks',JSON.stringify(checks));showReport(r);page('reportView');
+}
+function showReport(r){
+ let labels=['Motor','Hidráulico','Elétrica','Estrutura','Correias/correntes','Segurança'];
+ let rows=labels.map((l,i)=>'<p><b>'+l+':</b> '+r.items[i]+'</p>').join('');
+ document.getElementById('reportContent').innerHTML='<h1>RELATÓRIO TÉCNICO</h1><p><b>Equipamento:</b> '+r.machine+'</p><p><b>Horímetro:</b> '+r.hour+' h</p><p><b>Data:</b> '+r.date+'</p><hr><h3>Checklist</h3>'+rows+'<h3>Observações</h3><p>'+((r.obs||'Nenhuma observação registrada.').replace(/</g,'&lt;'))+'</p><h3>Conclusão</h3><p>Inspeção registrada no MaqControl. Os itens classificados como atenção ou problema devem ser avaliados e programados para manutenção.</p>';
+}
+function refresh(){
+ document.getElementById('countMachines').textContent=machines.length;document.getElementById('countChecks').textContent=checks.length;document.getElementById('countReports').textContent=checks.length;
+ let ml=document.getElementById('machineList'); if(ml)ml.innerHTML=machines.map(m=>'<div class="card item"><b>'+m.name+'</b><br>Patrimônio: '+m.pat+'<br>Horímetro: '+m.hour+' h<br>Próxima revisão: '+(m.next||'-')+' h</div>').join('')||'<p>Nenhuma máquina cadastrada.</p>';
+ let s=document.getElementById('machineSelect'); if(s)s.innerHTML=machines.map(m=>'<option value="'+m.id+'">'+m.name+'</option>').join('');
+ let rl=document.getElementById('reportList'); if(rl)rl.innerHTML=checks.slice().reverse().map(r=>'<div class="card"><b>'+r.machine+'</b> — '+r.date+' — '+r.hour+' h<br><button onclick="showReport(checks.find(x=>x.id=='+r.id+'));page(\'reportView\')">Abrir relatório</button></div>').join('')||'<p>Nenhum relatório.</p>';
+}
+if(localStorage.getItem('user')){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');}
+refresh();
+</script>
+</body></html>
