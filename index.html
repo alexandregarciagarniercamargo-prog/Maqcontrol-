@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MaqControl - Protótipo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#18212b}
+header{background:#17202a;color:#fff;padding:18px 24px;font-size:22px;font-weight:700}
+nav{background:#fff;padding:12px 24px;display:flex;gap:10px;border-bottom:1px solid #ddd;flex-wrap:wrap}
+button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;background:#17202a;color:#fff}
+button.secondary{background:#e9edf1;color:#18212b}
+main{max-width:1100px;margin:24px auto;padding:0 18px}.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.card{background:#fff;border:1px solid #e1e5e9;border-radius:12px;padding:18px}
+.big{font-size:28px;font-weight:700;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:18px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #ccd3da;border-radius:8px;margin:6px 0 12px}
+label{font-size:13px;font-weight:700}.machine{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.badge{padding:5px 9px;border-radius:20px;background:#e8f4ea;font-size:12px}.warn{background:#fff3cd}.danger{background:#fde2e2}
+h1{margin-bottom:6px}p{color:#5c6670}.report{background:#fff;padding:28px;border-radius:12px;border:1px solid #ddd;line-height:1.6}
+@media print{header,nav,.no-print{display:none}.page{display:block!important}body{background:white}}
+</style>
+</head>
+<body>
+<header>🚜 MaqControl <span style="font-size:13px;font-weight:400">| Gestão de manutenção de máquinas pesadas</span></header>
+<nav>
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('machines')">Máquinas</button>
+<button onclick="show('checklist')">Novo checklist</button>
+<button onclick="show('report')">Relatório</button>
+</nav>
+<main>
+<section id="dashboard" class="page active">
+<h1>Dashboard</h1><p>Visão geral da sua frota.</p>
+<div class="cards">
+<div class="card">Máquinas cadastradas<div class="big">12</div></div>
+<div class="card">Checklists este mês<div class="big">27</div></div>
+<div class="card">Manutenções próximas<div class="big">3</div></div>
+<div class="card">Problemas críticos<div class="big">2</div></div>
+</div>
+<div class="grid">
+<div class="card"><h3>Próximas manutenções</h3>
+<p>Vogele Super 1800 — 120 h restantes <span class="badge warn">Atenção</span></p>
+<p>Wirtgen W100 — 460 h restantes <span class="badge">Normal</span></p>
+<p>Dynapac CC2200 — 75 h restantes <span class="badge warn">Atenção</span></p>
+</div>
+<div class="card"><h3>Últimos registros</h3>
+<p>12/08 — W100 — checklist concluído</p>
+<p>11/08 — Super 1800 — vazamento hidráulico</p>
+<p>10/08 — CC2200 — revisão preventiva</p>
+</div>
+</div>
+</section>
+
+<section id="machines" class="page">
+<h1>Máquinas</h1><p>Cadastro e acompanhamento dos equipamentos.</p>
+<div class="card">
+<label>Nome / modelo</label><input id="mname" placeholder="Ex.: Vogele Super 1800">
+<label>Horímetro</label><input id="mhours" type="number" placeholder="8245">
+<label>Patrimônio</label><input placeholder="PAT-001">
+<button onclick="addMachine()">Cadastrar máquina</button>
+</div>
+<div id="machineList" class="grid"></div>
+</section>
+
+<section id="checklist" class="page">
+<h1>Novo checklist</h1><p>Preencha a inspeção do equipamento.</p>
+<div class="card">
+<label>Equipamento</label><select><option>Vogele Super 1800</option><option>Wirtgen W100</option><option>Dynapac CC2200</option></select>
+<label>Horímetro</label><input type="number" value="8245">
+<div class="grid">
+<div><label>Motor</label><select><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Sistema hidráulico</label><select><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Elétrica</label><select><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Estrutura</label><select><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Correias/correntes</label><select><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+<div><label>Segurança</label><select><option>OK</option><option>Atenção</option><option>Problema</option></select></div>
+</div>
+<label>Observações</label><textarea rows="5" placeholder="Descreva desgastes, vazamentos, peças quebradas..."></textarea>
+<button onclick="show('report')">Finalizar e gerar relatório</button>
+</div>
+</section>
+
+<section id="report" class="page">
+<div class="report">
+<h1>RELATÓRIO TÉCNICO</h1>
+<p><b>Equipamento:</b> Vogele Super 1800</p>
+<p><b>Horímetro:</b> 8.245 h</p>
+<p><b>Data:</b> 12/08/2026</p>
+<hr>
+<h3>Resultado da inspeção</h3>
+<p>Equipamento avaliado através de checklist preventivo. Foram identificados pontos que necessitam de acompanhamento e manutenção.</p>
+<h3>Observações</h3>
+<ul><li>Verificar desgastes dos componentes.</li><li>Inspecionar possíveis vazamentos hidráulicos.</li><li>Programar manutenção preventiva conforme horímetro.</li></ul>
+<h3>Conclusão</h3>
+<p>Recomenda-se programar os serviços apontados e registrar a execução no histórico do equipamento.</p>
+</div>
+<br><button class="no-print" onclick="window.print()">🖨️ Imprimir / salvar em PDF</button>
+</section>
+</main>
+<script>
+function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function addMachine(){
+ const n=document.getElementById('mname').value||'Nova máquina', h=document.getElementById('mhours').value||0;
+ const d=document.createElement('div');d.className='card machine';d.innerHTML='<div><b>'+n+'</b><br><small>Horímetro: '+h+' h</small></div><span class="badge">Ativa</span>';
+ document.getElementById('machineList').appendChild(d);
+}
+</script>
+</body></html>
